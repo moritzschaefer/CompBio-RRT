@@ -33,22 +33,9 @@ YourPlanner::choose(::rl::math::Vector& chosen)
 		chosen = lastConnected + (lastConnected-beforeLastConnected);
 		// Set sigma according to failCounter
 		sigma << failCounter, failCounter, failCounter, failCounter, failCounter, failCounter;
-		//(GaussianSampler*)(this->sampler)->sigma = &sigma;
 
 
 		((MyGaussian*)this->sampler)->generateGaussian(chosen);
-		//std::cout << "chosen: \n" << chosen << std::endl;
-
-		// why?
-		if(chosen.maxCoeff() > 6) {
-			//std::cout << chosen << std::endl;
-		}
-		else if(chosen.minCoeff() < -6) {
-			//std::cout << chosen << std::endl;
-		} else {
-			//std::cout << "Cool, alright" << std::endl;
-		}
-		//std::cout << "Sigma: \n" <<  *((GaussianSampler*)this->sampler)->sigma << "Mean: \n" << lastConnected + (lastConnected-beforeLastConnected) << "Chosen: " << chosen << std::endl;
 	}
 	else
 	{
@@ -59,8 +46,6 @@ YourPlanner::choose(::rl::math::Vector& chosen)
 Rrt::Vertex 
 YourPlanner::extend(Tree& tree, const Neighbor& nearest, const ::rl::math::Vector& chosen)
 {
-	//your modifications here
-	//check 
 
 	Rrt::Vertex res = RrtCon::connect(tree, nearest, chosen);
 	if(res == NULL) {
@@ -74,10 +59,6 @@ YourPlanner::extend(Tree& tree, const Neighbor& nearest, const ::rl::math::Vecto
 				
 				failCounter = 0.3;
 				Rrt::Vertex v;
-				//int x = int(this->rand() * ::boost::num_vertices(tree));
-
-				//std::cout << lastConnected << std::endl << std::endl << beforeLastConnected << std::endl;
-				//std::cout << "Failed too much. Try closest vertex" <<  std::endl;
 					
 				double minDistance = 10000;
 				for(VertexIteratorPair i=::boost::vertices(tree); i.first != i.second; ++i.first) {
@@ -94,28 +75,19 @@ YourPlanner::extend(Tree& tree, const Neighbor& nearest, const ::rl::math::Vecto
 				
 		}
 	} else {
-		//std::cout << failCounter << std::endl;
 		// Success: Reduce failCounter to reduce variance
 		failCounter /= 2.5;
+		// If the variance is very low (tooo many extend steps in a row), try sampling with a very high variance
 		if(failCounter < 0.001) {
 			failCounter = 30;
 		}
 		// Update the vectors where we sample
 		beforeLastConnected = (*tree[nearest.first].q);
-		//std::cout << chosen << std::endl;
 		lastConnected = chosen;
 
 	}
 	return res;
 }
-	
-// We only extend, dont connect
-/*Rrt::Vertex 
-YourPlanner::extend(Tree& tree, const Neighbor& nearest, const ::rl::math::Vector& chosen)
-{
-	//your modifications here
-	return RrtCon::extend(tree, nearest, chosen);
-}*/
 
 bool
 YourPlanner::solve()
@@ -124,7 +96,8 @@ YourPlanner::solve()
 	((GaussianSampler*)this->sampler)->sigma = &sigma;
 	lastConnected = *this->start;
 	beforeLastConnected = *this->start;
-	//your modifications here
+	
+	// copied with only small adaptions (use extend instead of connect
 	this->begin[0] = this->addVertex(this->tree[0], ::boost::make_shared< ::rl::math::Vector >(*this->start));
 	
 	::rl::math::Vector chosen(this->model->getDof());
